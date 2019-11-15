@@ -8,6 +8,8 @@ import (
 	"grpc-practice/hello"
 	"io"
 	"log"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -16,9 +18,13 @@ var (
 	caFile        = flag.String("ca_file", "", "The file containing the CA root cert file")
 	serverAddr    = flag.String("server_addr", "psy.cn:443", "The server address in the format of host:port")
 	crtServerName = flag.String("crt_server_name", "psy.cn", "The server name use to verify the hostname returned by TLS handshake")
+	c             = flag.Int("c", 5, "concurrent")
+	n             = flag.Int("n", 10000, "request for each concurrent")
+	s             = flag.Int("s", 500, "sleep milliseconds between each request")
 )
 
 func main() {
+
 	flag.Parse()
 	var opts []grpc.DialOption
 
@@ -59,13 +65,28 @@ func main() {
 		_ = conn.Close()
 	}()
 
+	wg := sync.WaitGroup{}
+	for i := 0; i < *c; i++ {
+		wg.Add(1)
+		go func(index int) {
+			for i := 0; i < *n; i++ {
+				doRequest(conn, index)
+				<-time.After(time.Duration(*s) * time.Millisecond)
+			}
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}
+
+func doRequest(conn *grpc.ClientConn, index int) {
 	client := hello.NewHelloServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Second)
 	defer cancel()
 	stream, err := client.SayHello(ctx)
 	if err != nil {
-		log.Fatalf("%v.SayHello, %v", client, err)
+		log.Fatalf("[%v]  %v.SayHello, %v", index, client, err)
 	}
 	waitc := make(chan struct{})
 	go func() {
@@ -76,16 +97,16 @@ func main() {
 				return
 			}
 			if err != nil {
-				log.Fatalf("Failed to receive a reply : %v", err)
+				log.Fatalf("[%v]  Failed to receive a reply : %v", index, err)
 			}
-			log.Printf("Got message %s ", in.Reply)
+			log.Printf("[%v] Got message %s ", index, in.Reply)
 		}
 	}()
 	for i := 0; i < 5; i++ {
-		if err := stream.Send(&hello.HelloRequest{Greeting: "good morning!"}); err != nil {
+		if err := stream.Send(&hello.HelloRequest{Greeting: "good morning! " + strconv.Itoa(i)}); err != nil {
 			log.Fatalf("Failed to send a request: %v", err)
 		}
-		<-time.After(1 * time.Second)
+		<-time.After(1 * time.Millisecond)
 	}
 	_ = stream.CloseSend()
 	<-waitc
