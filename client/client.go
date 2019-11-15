@@ -54,7 +54,7 @@ func main() {
 	//conn, err := grpc.DialContext(ctx, "psy:///", opts...)
 
 	//with passthrough scheme
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 	conn, err := grpc.DialContext(ctx, "passthrough:///"+*serverAddr, opts...)
 
 	if err != nil {
@@ -82,7 +82,7 @@ func main() {
 func doRequest(conn *grpc.ClientConn, index int) {
 	client := hello.NewHelloServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3000*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	stream, err := client.SayHello(ctx)
 	if err != nil {
@@ -97,16 +97,18 @@ func doRequest(conn *grpc.ClientConn, index int) {
 				return
 			}
 			if err != nil {
-				log.Fatalf("[%v]  Failed to receive a reply : %v", index, err)
+				log.Printf("[%v]  Failed to receive a reply : %v", index, err)
+				close(waitc)
+				return
 			}
 			log.Printf("[%v] Got message %s ", index, in.Reply)
 		}
 	}()
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 1; i++ {
 		if err := stream.Send(&hello.HelloRequest{Greeting: "good morning! " + strconv.Itoa(i)}); err != nil {
 			log.Fatalf("Failed to send a request: %v", err)
 		}
-		<-time.After(1 * time.Millisecond)
+		//<-time.After(1 * time.Millisecond)
 	}
 	_ = stream.CloseSend()
 	<-waitc
