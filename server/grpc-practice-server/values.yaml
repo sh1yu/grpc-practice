@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: psycore/grpc-practice-server
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
@@ -19,18 +19,17 @@ service:
 ingress:
   enabled: true
   annotations:
-    ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/grpc-backend: "true"
+#    ingress.kubernetes.io/ssl-redirect: "true"
+#    nginx.ingress.kubernetes.io/grpc-backend: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
   paths:
-#    - /hello.HelloService/SayHello
-    - /
+    - /hello.HelloService/SayHello
   hosts:
-    - chart-example.local
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+    - psy.cn
+  tls:
+    - secretName: psycn
+      hosts:
+        - psy.cn
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -40,9 +39,9 @@ resources: {}
   # limits:
   #  cpu: 100m
   #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
-  #  memory: 128Mi
+# requests:
+#  cpu: 100m
+#  memory: 128Mi
 
 nodeSelector: {}
 

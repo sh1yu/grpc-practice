@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"google.golang.org/grpc/credentials"
 	"grpc-practice/hello"
 	"io"
 	"log"
@@ -12,10 +13,10 @@ import (
 )
 
 var (
-	//tls      = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
-	//certFile = flag.String("cert_file", "", "The TLS cert file")
-	//keyFile  = flag.String("key_file", "", "The TLS key file")
-	port = flag.Int("port", 10000, "The server port")
+	tls      = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
+	certFile = flag.String("cert_file", "", "The TLS cert file")
+	keyFile  = flag.String("key_file", "", "The TLS key file")
+	port     = flag.Int("port", 10000, "The server port")
 )
 
 func main() {
@@ -26,20 +27,20 @@ func main() {
 	}
 	var opts []grpc.ServerOption
 
-	// with tls
-	//if *tls {
-	//	if *certFile == "" {
-	//		*certFile = testdata.Path("server1.pem")
-	//	}
-	//	if *keyFile == "" {
-	//		*keyFile = testdata.Path("server1.key")
-	//	}
-	//	creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
-	//	if err != nil {
-	//		log.Fatalf("Failed to generate credentials %v", err)
-	//	}
-	//	opts = []grpc.ServerOption{grpc.Creds(creds)}
-	//}
+	//with tls
+	if *tls {
+		if *certFile == "" {
+			*certFile = "crt/cert.pem"
+		}
+		if *keyFile == "" {
+			*keyFile = "crt/key.pem"
+		}
+		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+		if err != nil {
+			log.Fatalf("Failed to generate credentials %v", err)
+		}
+		opts = []grpc.ServerOption{grpc.Creds(creds)}
+	}
 
 	grpcServer := grpc.NewServer(opts...)
 

@@ -11,9 +11,9 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.port }}
       protocol: TCP
-      name: http
+      name: grpc
   selector:
     app.kubernetes.io/name: {{ include "grpc-practice-server.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
