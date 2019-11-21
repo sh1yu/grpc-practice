@@ -5,29 +5,53 @@ import (
 	"flag"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"grpc-practice/hello"
 	"io"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 var (
 	tls           = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
-	caFile        = flag.String("ca_file", "", "The file containing the CA root cert file")
-	serverAddr    = flag.String("server_addr", "psy.cn:443", "The server address in the format of host:port")
-	crtServerName = flag.String("crt_server_name", "psy.cn", "The server name use to verify the hostname returned by TLS handshake")
+	caFile        = flag.String("crt", "", "The file containing the CA root cert file")
+	serverAddr    = flag.String("addr", "psy.cn:443", "The server address in the format of host:port")
+	crtServerName = flag.String("host", "psy.cn", "The server name use to verify the hostname returned by TLS handshake")
 	c             = flag.Int("c", 5, "concurrent")
 	n             = flag.Int("n", 10000, "request for each concurrent")
 	s             = flag.Int("s", 500, "sleep milliseconds between each request")
 )
 
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	return "canary: always"
+}
+
+func (i *arrayFlags) Set(value string) error {
+	*i = append(*i, value)
+	return nil
+}
+
+var headerFlags arrayFlags
+
 func main() {
-
+	flag.Var(&headerFlags, "H", "grpc request header")
 	flag.Parse()
-	var opts []grpc.DialOption
 
+	headerKvs := make([]string, 0, 2*len(headerFlags))
+	for _, v := range headerFlags {
+		token := strings.Split(v, ":")
+		if len(token) != 2 {
+			continue
+		}
+		headerKvs = append(headerKvs, strings.TrimSpace(token[0]), strings.TrimSpace(token[1]))
+	}
+
+	var opts []grpc.DialOption
 	if *tls {
 		//with tls
 		if *caFile == "" {
@@ -70,7 +94,7 @@ func main() {
 		wg.Add(1)
 		go func(index int) {
 			for i := 0; i < *n; i++ {
-				doRequest(conn, index)
+				doRequest(conn, headerKvs, index)
 				<-time.After(time.Duration(*s) * time.Millisecond)
 			}
 			wg.Done()
@@ -79,12 +103,13 @@ func main() {
 	wg.Wait()
 }
 
-func doRequest(conn *grpc.ClientConn, index int) {
+func doRequest(conn *grpc.ClientConn, headerKvs []string, index int) {
 	client := hello.NewHelloServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	stream, err := client.SayHello(ctx)
+	metaCtx := metadata.AppendToOutgoingContext(ctx, headerKvs...)
+	stream, err := client.SayHello(metaCtx)
 	if err != nil {
 		log.Fatalf("[%v]  %v.SayHello, %v", index, client, err)
 	}

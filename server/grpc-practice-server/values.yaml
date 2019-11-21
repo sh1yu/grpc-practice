@@ -23,6 +23,7 @@ ingress:
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
 #    nginx.ingress.kubernetes.io/canary: "true"
 #    nginx.ingress.kubernetes.io/canary-by-header: "canary"
+#    nginx.ingress.kubernetes.io/canary-weight: "20"
   paths:
     - /hello.HelloService/SayHello
   hosts:
