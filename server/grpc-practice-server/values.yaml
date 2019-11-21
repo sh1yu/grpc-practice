@@ -14,12 +14,15 @@ fullnameOverride: ""
 
 service:
   type: ClusterIP
-  port: 10000
+  port: 10010
+  targetPort: 10000
 
 ingress:
   enabled: true
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+#    nginx.ingress.kubernetes.io/canary: "true"
+#    nginx.ingress.kubernetes.io/canary-by-header: "canary"
   paths:
     - /hello.HelloService/SayHello
   hosts:
