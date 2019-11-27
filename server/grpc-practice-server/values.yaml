@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: psycore/grpc-practice-server
-  tag: 3
+  tag: 4
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -20,12 +20,13 @@ service:
 ingress:
   enabled: true
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 #    nginx.ingress.kubernetes.io/canary: "true"
 #    nginx.ingress.kubernetes.io/canary-by-header: "canary"
 #    nginx.ingress.kubernetes.io/canary-weight: "20"
   paths:
-    - /hello.HelloService/SayHello
+    - /(hello.HelloService/SayHello)
   hosts:
     - psy.cn
   tls:
