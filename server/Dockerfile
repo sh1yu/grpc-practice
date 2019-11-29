@@ -19,4 +19,4 @@ COPY --from=builder /grpc-practice-server/crt          /grpc-practice-server/crt
 #ENV GRPC_GO_LOG_SEVERITY_LEVEL=INFO
 EXPOSE 10000
 
-CMD ["./server", "-tls", "-cert_file", "crt/cert.pem", "-key_file", "crt/key.pem"]
+CMD ["./server", "-tls", "-cert_file", "crt/cert.pem", "-key_file", "crt/key.pem", "-sleep", "5000"]

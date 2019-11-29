@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: psycore/grpc-practice-server
-  tag: 4
+  tag: 8
   pullPolicy: IfNotPresent
 
 nameOverride: ""
