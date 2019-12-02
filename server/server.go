@@ -4,12 +4,15 @@ import (
     "flag"
     "fmt"
     "google.golang.org/grpc/credentials"
+    "google.golang.org/grpc/metadata"
     "grpc-practice/hello"
     "io"
     "log"
     "net"
     "os"
+    "os/signal"
     "strings"
+    "syscall"
     "time"
 
     "google.golang.org/grpc"
@@ -66,7 +69,24 @@ func main() {
 
     hello.RegisterHelloServiceServer(grpcServer, &helloServer{})
     log.Printf("grpc listening at port: %v", *port)
-    log.Fatalf("%v", grpcServer.Serve(lis))
+
+    go func() {
+        if err := grpcServer.Serve(lis); err != nil {
+            log.Fatalf("grpc server serve err: %v", err)
+        }
+    }()
+
+    killerChan := make(chan os.Signal)
+    signal.Notify(killerChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+    // 等待退出信号
+    sig := <-killerChan
+    log.Printf("get killer signal: %v", sig)
+    log.Printf("waiting 10 seconds...")
+    <-time.After(10 * time.Second)
+    log.Printf("graceful stop grpc server...")
+    grpcServer.GracefulStop()
+    log.Printf("gracefully done.")
 }
 
 type helloServer struct {
@@ -77,6 +97,7 @@ func (s *helloServer) SayHello(stream hello.HelloService_SayHelloServer) error {
     if err != nil {
         return err
     }
+    md, _ := metadata.FromIncomingContext(stream.Context())
     for {
         req, err := stream.Recv()
         if err == io.EOF {
@@ -85,7 +106,7 @@ func (s *helloServer) SayHello(stream hello.HelloService_SayHelloServer) error {
         if err != nil {
             return err
         }
-        log.Println("recv:", req.Greeting)
+        log.Println("recv:", req.Greeting, " metadata:", md)
         if *sleepTime > 0 {
             <-time.After(time.Duration(*sleepTime) * time.Millisecond)
             log.Println("sleep over after:", *sleepTime)
