@@ -2,7 +2,7 @@
 {{- $fullName := include "grpc-practice-server.fullname" . -}}
 {{- $ingressPaths := .Values.ingress.paths -}}
 {{- $servicePort := .Values.service.port -}}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}

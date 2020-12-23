@@ -5,8 +5,7 @@
 replicaCount: 2
 
 image:
-  repository: psycore/grpc-practice-server
-  tag: 25
+  repository: psycore/grpc-practice-server:25
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -20,6 +19,7 @@ service:
 ingress:
   enabled: true
   annotations:
+#    nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 #    nginx.ingress.kubernetes.io/canary: "true"

@@ -1,0 +1,17 @@
+apiVersion: skaffold/v2beta10
+kind: Config
+metadata:
+    name: my-test
+build:
+    artifacts:
+    - image: my-image
+      context: .
+      docker:
+          dockerfile: server/Dockerfile
+deploy:
+    helm:
+        releases:
+        - name: demo-release
+          chartPath: server/grpc-practice-server/
+          artifactOverrides:
+              image.repository: my-image
